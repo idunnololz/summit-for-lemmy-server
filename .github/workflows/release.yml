@@ -39,5 +39,5 @@ jobs:
       - name: Release
         uses: softprops/action-gh-release@v1
         with:
-          token: ${{ secrets.GH_TOKEN }}
+          token: ${{ github.token }}
           files: release.jar
