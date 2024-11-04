@@ -3,7 +3,7 @@ ktor:
         modules:
             - com.idunnololz.summitForLemmy.server.ApplicationKt.module
     deployment:
-        port: 8080
+        port: "$PORT:8080"
         postgres:
             username: $POSTGRES_USERNAME
             password: $POSTGRES_PASSWORD
