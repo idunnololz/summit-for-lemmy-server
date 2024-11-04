@@ -1,0 +1,36 @@
+name: Build release jar
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  apk:
+    name: Generate release jar
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Setup JDK 20
+        uses: actions/setup-java@v3
+        with:
+          java-version: 20
+          distribution: zulu
+          cache: gradle
+      - name: chmod gradlew
+        run: chmod +x gradlew
+      - name: Build jar
+        run: ./gradlew :server:buildFatJar --stacktrace
+      - name: Rename APK
+        run: mv server/build/libs/server-all.jar release.jar
+      - run: echo "Build status report=${{ job.status }}."
+      - name: Upload arr
+        uses: actions/upload-artifact@v4
+        with:
+          name: release.jar
+          path: release.jar
