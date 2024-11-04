@@ -1,0 +1,26 @@
+[versions]
+kotlin = "2.0.21"
+exposed = "0.56.0"
+dagger = "2.52"
+
+[libraries]
+kotlin-test-junit = { module = "org.jetbrains.kotlin:kotlin-test-junit", version.ref = "kotlin" }
+logback-classic = { module = "ch.qos.logback:logback-classic", version = "1.4.14" }
+postgresql = { module = "org.postgresql:postgresql", version = "42.7.4" }
+json = { module = "org.json:json", version = "20240303" }
+
+exposed-core = { module = "org.jetbrains.exposed:exposed-core", version.ref = "exposed" }
+exposed-crypt = { module = "org.jetbrains.exposed:exposed-crypt", version.ref = "exposed" }
+exposed-dao = { module = "org.jetbrains.exposed:exposed-dao", version.ref = "exposed" }
+exposed-jdbc = { module = "org.jetbrains.exposed:exposed-jdbc", version.ref = "exposed" }
+exposed-kotlin-datetime = { module = "org.jetbrains.exposed:exposed-kotlin-datetime", version.ref = "exposed" }
+exposed-json = { module = "org.jetbrains.exposed:exposed-json", version.ref = "exposed" }
+exposed-money = { module = "org.jetbrains.exposed:exposed-money", version.ref = "exposed" }
+exposed-spring-boot-starter = { module = "org.jetbrains.exposed:exposed-spring-boot-starter", version.ref = "exposed" }
+
+dagger = { module = "com.google.dagger:dagger", version.ref = "dagger" }
+dagger-compiler = { module = "com.google.dagger:dagger-compiler", version.ref = "dagger" }
+
+[plugins]
+ktor = { id = "io.ktor.plugin", version = "3.0.1" }
+serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref="kotlin"}
