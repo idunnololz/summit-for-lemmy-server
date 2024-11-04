@@ -28,10 +28,10 @@ jobs:
         run: chmod +x gradlew
       - name: Build jar
         run: ./gradlew :server:buildFatJar --stacktrace
-      - name: Rename APK
+      - name: Rename jar
         run: mv server/build/libs/server-all.jar release.jar
       - run: echo "Build status report=${{ job.status }}."
-      - name: Upload arr
+      - name: Upload jar
         uses: actions/upload-artifact@v4
         with:
           name: release.jar
