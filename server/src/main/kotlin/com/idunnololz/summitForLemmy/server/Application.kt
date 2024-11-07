@@ -1,7 +1,6 @@
 package com.idunnololz.summitForLemmy.server
 
 import com.idunnololz.summitForLemmy.server.plugins.configureDatabases
-import com.idunnololz.summitForLemmy.server.plugins.configureRouting
 import com.idunnololz.summitForLemmy.server.plugins.configureSerialization
 import com.idunnololz.summitForLemmy.server.trending.TrendingUpdater
 import io.ktor.server.application.*
@@ -15,7 +14,6 @@ fun main(args: Array<String>) {
 fun Application.module() {
     configureSerialization()
     configureDatabases()
-    configureRouting()
 
     val server = DaggerServer.builder()
         .applicationModule(ApplicationModule(this))

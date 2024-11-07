@@ -8,6 +8,7 @@ kotlin-test-junit = { module = "org.jetbrains.kotlin:kotlin-test-junit", version
 logback-classic = { module = "ch.qos.logback:logback-classic", version = "1.4.14" }
 postgresql = { module = "org.postgresql:postgresql", version = "42.7.4" }
 json = { module = "org.json:json", version = "20240303" }
+krontab = { module = "dev.inmo:krontab", version = "2.6.1" }
 
 exposed-core = { module = "org.jetbrains.exposed:exposed-core", version.ref = "exposed" }
 exposed-crypt = { module = "org.jetbrains.exposed:exposed-crypt", version.ref = "exposed" }

@@ -42,6 +42,7 @@ dependencies {
     implementation(libs.exposed.money)
     implementation(libs.exposed.spring.boot.starter)
     implementation(libs.json)
+    implementation(libs.krontab)
 
 //    implementation("org.jetbrains.exposed:exposed-crypt:$exposedVersion")
 //    implementation("org.jetbrains.exposed:exposed-dao:$exposedVersion")
