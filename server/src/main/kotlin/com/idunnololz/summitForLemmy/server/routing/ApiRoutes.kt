@@ -20,6 +20,9 @@ class ApiRoutes @Inject constructor(
 ) {
     fun initialize() {
         app.routing {
+            get("/") {
+                call.respondRedirect("https://summit.idunnololz.com/")
+            }
             get("/get-community-trend-data") {
                 val communityName = call.queryParameters["communityName"]
                 val instance = call.queryParameters["instance"]
