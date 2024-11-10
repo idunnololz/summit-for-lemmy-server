@@ -50,6 +50,15 @@ class ApiRoutes @Inject constructor(
             get("/tasks") {
                 call.respond(taskManagerController.getAllTasksInfo())
             }
+            get("/get-all-community-trend-data") {
+                val data = trendingController.getAllCommunityTrendData()
+
+                if (data != null) {
+                    call.respond(data)
+                } else {
+                    call.respond(HttpStatusCode.NotFound, "no trend data")
+                }
+            }
             get("/run-data-gatherer") {
                 call.respond("Ok")
 

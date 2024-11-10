@@ -130,6 +130,15 @@ class TrendingManager @Inject constructor(
         }
     }
 
+    suspend fun getAllCommunityTrendData(): TrendingUpdater.AllCommunityTrendData? =
+        try {
+            Json.decodeFromString<TrendingUpdater.AllCommunityTrendData>(trendingDataFile.bufferedReader().use { it.readText() }).let {
+                return it
+            }
+        } catch (e: Exception) {
+            null
+        }
+
     suspend fun getAllCommunityData(): List<CommunityStatsEntity> {
         val data = mutableListOf<CommunityStatsEntity>()
 

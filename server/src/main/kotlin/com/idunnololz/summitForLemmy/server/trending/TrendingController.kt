@@ -15,4 +15,8 @@ class TrendingController @Inject constructor(
     suspend fun updateTrending() {
         trendingUpdater.updateCommunitiesTrendData()
     }
+
+    suspend fun getAllCommunityTrendData(): TrendingUpdater.AllCommunityTrendData? {
+        return trendingManager.getAllCommunityTrendData()
+    }
 }
