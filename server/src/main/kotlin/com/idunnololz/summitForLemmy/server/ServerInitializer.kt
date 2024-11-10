@@ -1,23 +1,23 @@
 package com.idunnololz.summitForLemmy.server
 
+import com.idunnololz.summitForLemmy.server.dataGatherer.DataGatherer
 import com.idunnololz.summitForLemmy.server.routing.ApiRoutes
 import com.idunnololz.summitForLemmy.server.taskManager.TaskManager
 import com.idunnololz.summitForLemmy.server.trending.TrendingUpdater
 import com.idunnololz.summitForLemmy.server.utils.CoroutineScopeFactory
 import io.ktor.server.application.*
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import javax.inject.Inject
 import javax.inject.Singleton
-import kotlin.time.Duration.Companion.hours
 
 @Singleton
 class ServerInitializer @Inject constructor(
     private val app: Application,
     private val coroutineScopeFactory: CoroutineScopeFactory,
     private val taskManager: TaskManager,
+    private val dataGatherer: DataGatherer,
     private val trendingUpdater: TrendingUpdater,
     private val apiRoutes: ApiRoutes,
 ) {
@@ -26,17 +26,34 @@ class ServerInitializer @Inject constructor(
 
     fun initialize() {
         taskManager.schedule(
-            taskName = "update-trending-task",
+            taskName = "update-communities-data-task",
             // https://insanusmokrassar.github.io/KrontabPredictor/?krontab=0%200%20*%20*%20*
             kronTabString = "0 0 * * *",
         ) {
             withContext(Dispatchers.Default) {
                 try {
-                    trendingUpdater.updateTrending()
+                    dataGatherer.updateCommunitiesData()
                 } catch (e: Exception) {
                     app.log.error("Error updating trending data.", e)
                 }
             }
+        }
+        taskManager.schedule(
+            taskName = "update-trending-task",
+            // https://insanusmokrassar.github.io/KrontabPredictor/?krontab=0%200%200%2F12%20*%20*
+            kronTabString = "0 0 0/12 * *",
+        ) {
+            withContext(Dispatchers.Default) {
+                try {
+                    trendingUpdater.updateTrendingData()
+                } catch (e: Exception) {
+                    app.log.error("Error updating trending data.", e)
+                }
+            }
+        }
+
+        coroutineScope.launch {
+            trendingUpdater.updateTrendingData("summit", "lemmy.world")
         }
 
         apiRoutes.initialize()

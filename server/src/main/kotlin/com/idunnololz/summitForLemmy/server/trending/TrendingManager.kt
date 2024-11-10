@@ -7,12 +7,14 @@ import com.idunnololz.summitForLemmy.server.utils.sha256HashAsHexString
 import io.ktor.util.logging.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runInterruptible
+import kotlinx.datetime.Clock
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.encodeToJsonElement
 import kotlinx.serialization.json.encodeToStream
 import org.jetbrains.exposed.dao.id.EntityID
 import org.jetbrains.exposed.sql.SchemaUtils
+import org.jetbrains.exposed.sql.SizedIterable
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.jetbrains.exposed.sql.upsert
 import java.io.File
@@ -102,6 +104,7 @@ class TrendingManager @Inject constructor(
                 }
 
                 val updatedData = communityTrendData.copy(
+                    lastUpdateTime = Clock.System.now().toString(),
                     statsWithTime = communityTrendData.statsWithTime + CommunityCountsWithTime(
                         communityEntity.counts,
                         communityEntity.score,
@@ -116,6 +119,16 @@ class TrendingManager @Inject constructor(
                 }
             }
         }
+    }
+
+    suspend fun getAllCommunityData(): List<CommunityStatsEntity> {
+        val data = mutableListOf<CommunityStatsEntity>()
+
+        transaction {
+            CommunityStatsEntity.all().mapTo(data) { it }
+        }
+
+        return data
     }
 
     suspend fun getCommunityTrendData(communityName: String, instance: String): CommunityTrendData? {
@@ -148,17 +161,18 @@ class TrendingManager @Inject constructor(
         }
 
         return CommunityTrendData(
-            communityStatsEntity.baseurl,
-            communityStatsEntity.nsfw,
-            communityStatsEntity.isSuspicious,
-            communityStatsEntity.name,
-            communityStatsEntity.published,
-            communityStatsEntity.title,
-            communityStatsEntity.url,
-            communityStatsEntity.desc,
-            communityStatsEntity.icon,
-            communityStatsEntity.banner,
-            listOf(),
+            baseurl = communityStatsEntity.baseurl,
+            nsfw = communityStatsEntity.nsfw,
+            isSuspicious = communityStatsEntity.isSuspicious,
+            name = communityStatsEntity.name,
+            published = communityStatsEntity.published,
+            title = communityStatsEntity.title,
+            url = communityStatsEntity.url,
+            desc = communityStatsEntity.desc,
+            lastUpdateTime = null,
+            icon = communityStatsEntity.icon,
+            banner = communityStatsEntity.banner,
+            statsWithTime = listOf(),
         )
     }
 
@@ -172,6 +186,7 @@ class TrendingManager @Inject constructor(
         val title: String,
         val url: String,
         val desc: String,
+        val lastUpdateTime: String? = null,
         val icon: String? = null,
         val banner: String? = null,
         val statsWithTime: List<CommunityCountsWithTime>,

@@ -1,31 +1,15 @@
 package com.idunnololz.summitForLemmy.server.trending
 
-import com.idunnololz.summitForLemmy.server.localStorage.LocalStorageManager
-import com.idunnololz.summitForLemmy.server.trending.db.CommunityStatsEntity
-import com.idunnololz.summitForLemmy.server.trending.db.CommunityStatsTable
-import com.idunnololz.summitForLemmy.server.utils.retryIo
-import com.idunnololz.summitForLemmy.server.utils.sha256HashAsHexString
 import io.ktor.client.*
-import io.ktor.client.call.*
-import io.ktor.client.request.*
-import io.ktor.http.*
-import kotlinx.serialization.ExperimentalSerializationApi
-import kotlinx.serialization.Serializable
-import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.encodeToJsonElement
-import kotlinx.serialization.json.encodeToStream
-import org.jetbrains.exposed.dao.id.EntityID
-import org.jetbrains.exposed.sql.SchemaUtils
-import org.jetbrains.exposed.sql.transactions.transaction
-import org.jetbrains.exposed.sql.upsert
-import java.io.File
-import java.time.Instant
-import java.time.OffsetDateTime
-import java.time.ZoneOffset
 import javax.inject.Inject
-import kotlin.io.encoding.ExperimentalEncodingApi
 import io.ktor.util.logging.*
+import korlibs.time.days
+import korlibs.time.fromDays
+import kotlinx.datetime.*
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
 import javax.inject.Singleton
+import kotlin.time.Duration
 
 @Singleton
 class TrendingUpdater @Inject constructor(
@@ -35,23 +19,81 @@ class TrendingUpdater @Inject constructor(
 
     private val logger = KtorSimpleLogger("TrendingUpdater")
 
-    suspend fun updateTrending() {
-        logger.info("Updating trending stats...")
+    suspend fun updateTrendingData() {
+        val allCommunities = trendingManager.getAllCommunityData()
 
-        retryIo(
-            initialDelay = 1000,
-            maxDelay = 16_000,
-        ) {
-            val response = httpClient
-                .get("https://data.lemmyverse.net/data/community.full.json")
+        for (communityData in allCommunities) {
+            updateTrendingData(communityData.name, communityData.baseurl)
+        }
+    }
 
-            if (response.status == HttpStatusCode.OK) {
-                trendingManager.updateTrendingData(response.body())
-            } else {
+    suspend fun updateTrendingData(communityName: String, instance: String) {
+        val trendData = trendingManager.getCommunityTrendData(
+            communityName = communityName,
+            instance = instance
+        )
 
-            }
+        trendData ?: return
+
+        val last7Days = getLast7DaysTrendData(trendData)
+        val now = Clock.System.now()
+
+        val last7DaysData = last7Days.map {
+            val (_, day, month, year) = it.dt.split("-").map { it.toInt() }
+            val daysAgo = (now - LocalDateTime(year, month, day, 0, 0, 0, 0)
+                .toInstant(TimeZone.currentSystemDefault())).days.toInt()
+
+            daysAgo to it.counts.usersActiveDay
         }
 
-        logger.info("Trending stats updated!")
+        logger.info(Json.encodeToString(last7Days))
+        logger.info(calculateTrend(last7DaysData).toString())
+    }
+
+    private fun getLast7DaysTrendData(
+        trendData: TrendingManager.CommunityTrendData
+    ): List<TrendingManager.CommunityCountsWithTime> {
+
+        val intermediateData = trendData.statsWithTime.associateBy {
+            it.dt.split("-").drop(1).joinToString(separator = "-")
+        }
+        val sevenDaysAgo = Clock.System.now().minus(Duration.fromDays(7))
+
+        val last7DaysData = intermediateData.values.filter {
+            val (hour, day, month, year) = it.dt.split("-").map { it.toInt() }
+
+            LocalDateTime(year, month, day, hour, 0, 0, 0)
+                .toInstant(TimeZone.currentSystemDefault()) > sevenDaysAgo
+        }
+
+        return last7DaysData.sortedByDescending {
+            val (hour, day, month, year) = it.dt.split("-").map { it.toInt() }
+            LocalDateTime(year, month, day, hour, 0, 0, 0)
+        }
+    }
+
+    /**
+     * @param data list of [day, count]
+     */
+    private fun calculateTrend(data: List<Pair<Int, Int>>): Double {
+        val totalCount = data.sumOf { it.second }
+        var multipliedData = 0
+        var summedDays = 0
+        var squaredIndex = 0
+
+        for ((day, count) in data) {
+            multipliedData += day * count
+            summedDays += day
+            squaredIndex += day * day
+        }
+
+        val numerator = (data.size * multipliedData) - (totalCount * summedDays)
+        val denominator = (data.size * squaredIndex) - (summedDays * summedDays)
+
+        if (denominator == 0) {
+            return 0.0
+        }
+
+        return numerator / denominator.toDouble()
     }
 }

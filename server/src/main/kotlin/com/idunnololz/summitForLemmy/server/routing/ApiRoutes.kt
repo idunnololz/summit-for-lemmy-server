@@ -1,5 +1,6 @@
 package com.idunnololz.summitForLemmy.server.routing
 
+import com.idunnololz.summitForLemmy.server.dataGatherer.DataGatherer
 import com.idunnololz.summitForLemmy.server.taskManager.TaskManager
 import com.idunnololz.summitForLemmy.server.taskManager.TaskManagerController
 import com.idunnololz.summitForLemmy.server.taskManager.toTaskInfo
@@ -17,6 +18,7 @@ class ApiRoutes @Inject constructor(
     private val app: Application,
     private val trendingController: TrendingController,
     private val taskManagerController: TaskManagerController,
+    private val dataGatherer: DataGatherer,
 ) {
     fun initialize() {
         app.routing {
@@ -47,6 +49,11 @@ class ApiRoutes @Inject constructor(
             }
             get("/tasks") {
                 call.respond(taskManagerController.getAllTasksInfo())
+            }
+            get("/run-data-gatherer") {
+                call.respond("Ok")
+
+                dataGatherer.updateCommunitiesData()
             }
             // Static plugin. Try to access `/static/index.html`
             staticResources("/static", "static")
