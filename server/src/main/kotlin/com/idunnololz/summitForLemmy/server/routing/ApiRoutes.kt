@@ -55,6 +55,11 @@ class ApiRoutes @Inject constructor(
 
                 dataGatherer.updateCommunitiesData()
             }
+            get("/run-update-trending") {
+                call.respond("Ok")
+
+                trendingController.updateTrending()
+            }
             // Static plugin. Try to access `/static/index.html`
             staticResources("/static", "static")
         }

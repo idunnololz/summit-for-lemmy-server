@@ -9,6 +9,8 @@ import io.ktor.server.application.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -45,16 +47,18 @@ class ServerInitializer @Inject constructor(
         ) {
             withContext(Dispatchers.Default) {
                 try {
-                    trendingUpdater.updateTrendingData()
+                    trendingUpdater.updateCommunitiesTrendData()
                 } catch (e: Exception) {
                     app.log.error("Error updating trending data.", e)
                 }
             }
         }
 
-        coroutineScope.launch {
-            trendingUpdater.updateTrendingData("summit", "lemmy.world")
-        }
+//        coroutineScope.launch {
+//            val d = trendingUpdater.getTrendingData("technology", "lemmy.world")
+//
+//            app.log.info("data: ${Json.encodeToString(d)}")
+//        }
 
         apiRoutes.initialize()
     }

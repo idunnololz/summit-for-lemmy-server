@@ -9,12 +9,12 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runInterruptible
 import kotlinx.datetime.Clock
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.encodeToJsonElement
 import kotlinx.serialization.json.encodeToStream
 import org.jetbrains.exposed.dao.id.EntityID
 import org.jetbrains.exposed.sql.SchemaUtils
-import org.jetbrains.exposed.sql.SizedIterable
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.jetbrains.exposed.sql.upsert
 import java.io.File
@@ -28,9 +28,10 @@ import javax.inject.Singleton
 class TrendingManager @Inject constructor(
     private val localStorageManager: LocalStorageManager,
 ) {
-    private val logger = KtorSimpleLogger("TrendingUpdater")
+    private val logger = KtorSimpleLogger("TrendingManager")
 
     private val trendsDataDir = File(localStorageManager.dataDir, "trends")
+    private val trendingDataFile = File(localStorageManager.dataDir, "trending_communities.json")
 
     fun updateTrendingData(trendingData: List<CommunityStats>) {
         transaction {
@@ -118,6 +119,14 @@ class TrendingManager @Inject constructor(
                     Json.encodeToStream(updatedData, it)
                 }
             }
+        }
+    }
+
+    suspend fun updateAllCommunityTrendData(data: TrendingUpdater.AllCommunityTrendData) {
+        trendingDataFile.parentFile.mkdirs()
+
+        trendingDataFile.outputStream().use {
+            Json.encodeToStream(data, it)
         }
     }
 

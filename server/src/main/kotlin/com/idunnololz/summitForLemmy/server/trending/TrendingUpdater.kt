@@ -1,72 +1,93 @@
 package com.idunnololz.summitForLemmy.server.trending
 
-import io.ktor.client.*
 import javax.inject.Inject
 import io.ktor.util.logging.*
 import korlibs.time.days
 import korlibs.time.fromDays
 import kotlinx.datetime.*
-import kotlinx.serialization.encodeToString
-import kotlinx.serialization.json.Json
+import kotlinx.serialization.Serializable
 import javax.inject.Singleton
 import kotlin.time.Duration
 
 @Singleton
 class TrendingUpdater @Inject constructor(
-    private val httpClient: HttpClient,
     private val trendingManager: TrendingManager,
 ) {
-
     private val logger = KtorSimpleLogger("TrendingUpdater")
 
-    suspend fun updateTrendingData() {
+    suspend fun updateCommunitiesTrendData() {
+        logger.info("Updating community trend data...")
+
         val allCommunities = trendingManager.getAllCommunityData()
 
-        for (communityData in allCommunities) {
-            updateTrendingData(communityData.name, communityData.baseurl)
-        }
+        logger.info("There are ${allCommunities.size} communities with trend data...")
+
+        val data = AllCommunityTrendData(
+            Clock.System.now().toString(),
+            allCommunities
+                .mapNotNull { communityData ->
+                    getTrendingData(communityData.name, communityData.baseurl)
+                }
+                .filter { it.trendScore7Day != 0.0 && it.trendScore30Day != 0.0 }
+                .sortedByDescending { it.trendScore7Day },
+        )
+
+        trendingManager.updateAllCommunityTrendData(data)
+        logger.info("Community trend data updated.")
     }
 
-    suspend fun updateTrendingData(communityName: String, instance: String) {
+    suspend fun getTrendingData(communityName: String, instance: String): CommunityTrendData? {
         val trendData = trendingManager.getCommunityTrendData(
             communityName = communityName,
             instance = instance
         )
 
-        trendData ?: return
+        trendData ?: return null
 
-        val last7Days = getLast7DaysTrendData(trendData)
+        return CommunityTrendData(
+            communityName = communityName,
+            instance = instance,
+            trendScore7Day = calculateTrendLastNDays(trendData, 7),
+            trendScore30Day = calculateTrendLastNDays(trendData, 30),
+        )
+    }
+
+    private fun calculateTrendLastNDays(
+        trendData: TrendingManager.CommunityTrendData,
+        days: Int
+    ): Double {
+        val lastNDays = getLastNDaysTrendData(trendData, days)
         val now = Clock.System.now()
 
-        val last7DaysData = last7Days.map {
+        val lastNDaysData = lastNDays.map {
             val (_, day, month, year) = it.dt.split("-").map { it.toInt() }
             val daysAgo = (now - LocalDateTime(year, month, day, 0, 0, 0, 0)
                 .toInstant(TimeZone.currentSystemDefault())).days.toInt()
 
-            daysAgo to it.counts.usersActiveDay
+            (days - daysAgo) to it.counts.usersActiveWeek
         }
 
-        logger.info(Json.encodeToString(last7Days))
-        logger.info(calculateTrend(last7DaysData).toString())
+        return calculateTrend(lastNDaysData)
     }
 
-    private fun getLast7DaysTrendData(
-        trendData: TrendingManager.CommunityTrendData
+    private fun getLastNDaysTrendData(
+        trendData: TrendingManager.CommunityTrendData,
+        days: Int,
     ): List<TrendingManager.CommunityCountsWithTime> {
 
         val intermediateData = trendData.statsWithTime.associateBy {
             it.dt.split("-").drop(1).joinToString(separator = "-")
         }
-        val sevenDaysAgo = Clock.System.now().minus(Duration.fromDays(7))
+        val sevenDaysAgo = Clock.System.now().minus(Duration.fromDays(days))
 
-        val last7DaysData = intermediateData.values.filter {
+        val lastNDaysData = intermediateData.values.filter {
             val (hour, day, month, year) = it.dt.split("-").map { it.toInt() }
 
             LocalDateTime(year, month, day, hour, 0, 0, 0)
                 .toInstant(TimeZone.currentSystemDefault()) > sevenDaysAgo
         }
 
-        return last7DaysData.sortedByDescending {
+        return lastNDaysData.sortedByDescending {
             val (hour, day, month, year) = it.dt.split("-").map { it.toInt() }
             LocalDateTime(year, month, day, hour, 0, 0, 0)
         }
@@ -96,4 +117,18 @@ class TrendingUpdater @Inject constructor(
 
         return numerator / denominator.toDouble()
     }
+
+    @Serializable
+    data class AllCommunityTrendData(
+        val lastUpdateTime: String,
+        val allTrendingData: List<CommunityTrendData>
+    )
+
+    @Serializable
+    data class CommunityTrendData(
+        val communityName: String,
+        val instance: String,
+        val trendScore7Day: Double,
+        val trendScore30Day: Double,
+    )
 }
