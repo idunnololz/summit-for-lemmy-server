@@ -1,4 +1,4 @@
-package com.idunnololz.summitForLemmy.server.trending
+package com.idunnololz.summitForLemmy.server.lemmyStats
 
 import javax.inject.Inject
 import io.ktor.util.logging.*
@@ -7,18 +7,22 @@ import korlibs.time.fromDays
 import kotlinx.datetime.*
 import kotlinx.serialization.Serializable
 import javax.inject.Singleton
+import kotlin.math.ln
+import kotlin.math.max
+import kotlin.math.pow
 import kotlin.time.Duration
 
 @Singleton
 class TrendingUpdater @Inject constructor(
-    private val trendingManager: TrendingManager,
+    private val lemmyStatsManager: LemmyStatsManager,
+    private val trendingDataCache: TrendingDataCache,
 ) {
     private val logger = KtorSimpleLogger("TrendingUpdater")
 
     suspend fun updateCommunitiesTrendData() {
         logger.info("Updating community trend data...")
 
-        val allCommunities = trendingManager.getAllCommunityData()
+        val allCommunities = lemmyStatsManager.getAllCommunityData()
 
         logger.info("There are ${allCommunities.size} communities with trend data...")
 
@@ -28,33 +32,45 @@ class TrendingUpdater @Inject constructor(
                 .mapNotNull { communityData ->
                     getTrendingData(communityData.name, communityData.baseurl)
                 }
-                .filter { it.trendScore7Day != 0.0 && it.trendScore30Day != 0.0 }
+                .filter { it.trendScore7Day != 0.0 && it.trendScore30Day != 0.0 && it.hotScore != 0.0 }
                 .sortedByDescending { it.trendScore7Day },
         )
 
-        trendingManager.updateAllCommunityTrendData(data)
+        lemmyStatsManager.updateAllCommunityTrendData(data)
         logger.info("Community trend data updated.")
+
+        trendingDataCache.trendingCommunityData = null
     }
 
     suspend fun getTrendingData(communityName: String, instance: String): CommunityTrendData? {
-        val trendData = trendingManager.getCommunityTrendData(
+        val trendData = lemmyStatsManager.getCommunityTrendData(
             communityName = communityName,
             instance = instance
         )
 
         trendData ?: return null
 
+        val hoursDiff = ((Clock.System.now().epochSeconds * 1000) - trendData.published) / 3600000
+
+        val hotScore = if (hoursDiff < 720) {
+            ln(max(2.0, calculateTrendLastNDays(trendData, 7, { this.usersActiveDay }) + 2.0)) / (hoursDiff + 2.0).pow(1.1)
+        } else {
+            0.0
+        }
+
         return CommunityTrendData(
             communityName = communityName,
             instance = instance,
             trendScore7Day = calculateTrendLastNDays(trendData, 7),
             trendScore30Day = calculateTrendLastNDays(trendData, 30),
+            hotScore = hotScore,
         )
     }
 
     private fun calculateTrendLastNDays(
-        trendData: TrendingManager.CommunityTrendData,
-        days: Int
+        trendData: LemmyStatsManager.CommunityTrendData,
+        days: Int,
+        countToUseFn: CommunityCounts.() -> Int = { usersActiveWeek },
     ): Double {
         val lastNDays = getLastNDaysTrendData(trendData, days)
         val now = Clock.System.now()
@@ -64,16 +80,16 @@ class TrendingUpdater @Inject constructor(
             val daysAgo = (now - LocalDateTime(year, month, day, 0, 0, 0, 0)
                 .toInstant(TimeZone.currentSystemDefault())).days.toInt()
 
-            (days - daysAgo) to it.counts.usersActiveWeek
+            (days - daysAgo + 1) to it.counts.countToUseFn()
         }
 
         return calculateTrend(lastNDaysData)
     }
 
     private fun getLastNDaysTrendData(
-        trendData: TrendingManager.CommunityTrendData,
+        trendData: LemmyStatsManager.CommunityTrendData,
         days: Int,
-    ): List<TrendingManager.CommunityCountsWithTime> {
+    ): List<LemmyStatsManager.CommunityCountsWithTime> {
 
         val intermediateData = trendData.statsWithTime.associateBy {
             it.dt.split("-").drop(1).joinToString(separator = "-")
@@ -130,5 +146,6 @@ class TrendingUpdater @Inject constructor(
         val instance: String,
         val trendScore7Day: Double,
         val trendScore30Day: Double,
+        val hotScore: Double,
     )
 }

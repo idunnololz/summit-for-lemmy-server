@@ -1,8 +1,9 @@
 package com.idunnololz.summitForLemmy.server.taskManager
 
+import com.idunnololz.summitForLemmy.server.network.objects.AllTasksData
+import io.ktor.server.response.*
+import io.ktor.server.routing.*
 import kotlinx.datetime.Clock
-import kotlinx.datetime.Instant
-import kotlinx.serialization.Serializable
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -10,18 +11,14 @@ import javax.inject.Singleton
 class TaskManagerController @Inject constructor(
     private val taskManager: TaskManager,
 ) {
-    suspend fun getAllTasksInfo(): AllTasksData {
-        return AllTasksData(
-            taskInfo = taskManager.allTasks.map {
-                it.toTaskInfo()
-            },
-            currentTime = Clock.System.now(),
+    suspend fun getAllTasksInfo(call: RoutingCall) {
+        call.respond(
+            AllTasksData(
+                taskInfo = taskManager.allTasks.map {
+                    it.toTaskInfo()
+                },
+                currentTime = Clock.System.now(),
+            )
         )
     }
 }
-
-@Serializable
-class AllTasksData(
-    val taskInfo: List<TaskInfo>,
-    val currentTime: Instant,
-)

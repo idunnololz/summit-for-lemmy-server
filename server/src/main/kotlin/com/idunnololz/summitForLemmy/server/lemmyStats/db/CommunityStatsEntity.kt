@@ -1,6 +1,6 @@
-package com.idunnololz.summitForLemmy.server.trending.db
+package com.idunnololz.summitForLemmy.server.lemmyStats.db
 
-import com.idunnololz.summitForLemmy.server.trending.CommunityCounts
+import com.idunnololz.summitForLemmy.server.lemmyStats.CommunityCounts
 import kotlinx.serialization.json.Json
 import org.jetbrains.exposed.dao.Entity
 import org.jetbrains.exposed.dao.EntityClass

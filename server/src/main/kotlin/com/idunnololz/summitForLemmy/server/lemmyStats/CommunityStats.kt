@@ -1,10 +1,7 @@
-package com.idunnololz.summitForLemmy.server.trending
+package com.idunnololz.summitForLemmy.server.lemmyStats
 
-import io.ktor.client.statement.*
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import org.json.JSONArray
-import org.json.JSONObject
 
 @Serializable
 data class CommunityStats(

@@ -1,6 +1,6 @@
 package com.idunnololz.summitForLemmy.server.dataGatherer
 
-import com.idunnololz.summitForLemmy.server.trending.TrendingManager
+import com.idunnololz.summitForLemmy.server.lemmyStats.LemmyStatsManager
 import com.idunnololz.summitForLemmy.server.utils.retryIo
 import io.ktor.client.*
 import io.ktor.client.call.*
@@ -12,7 +12,7 @@ import javax.inject.Inject
 
 class DataGatherer @Inject constructor(
     private val httpClient: HttpClient,
-    private val trendingManager: TrendingManager,
+    private val lemmyStatsManager: LemmyStatsManager,
 ) {
 
     private val logger = KtorSimpleLogger("TrendingUpdater")
@@ -28,7 +28,7 @@ class DataGatherer @Inject constructor(
                 .get("https://data.lemmyverse.net/data/community.full.json")
 
             if (response.status == HttpStatusCode.OK) {
-                trendingManager.updateTrendingData(response.body())
+                lemmyStatsManager.updateTrendingData(response.body())
             } else {
                 throw IOException()
             }

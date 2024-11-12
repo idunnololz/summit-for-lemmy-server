@@ -1,15 +1,14 @@
-package com.idunnololz.summitForLemmy.server.trending
+package com.idunnololz.summitForLemmy.server.lemmyStats
 
 import com.idunnololz.summitForLemmy.server.localStorage.LocalStorageManager
-import com.idunnololz.summitForLemmy.server.trending.db.CommunityStatsEntity
-import com.idunnololz.summitForLemmy.server.trending.db.CommunityStatsTable
+import com.idunnololz.summitForLemmy.server.lemmyStats.db.CommunityStatsEntity
+import com.idunnololz.summitForLemmy.server.lemmyStats.db.CommunityStatsTable
 import com.idunnololz.summitForLemmy.server.utils.sha256HashAsHexString
 import io.ktor.util.logging.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runInterruptible
 import kotlinx.datetime.Clock
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.encodeToJsonElement
 import kotlinx.serialization.json.encodeToStream
@@ -25,7 +24,7 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
-class TrendingManager @Inject constructor(
+class LemmyStatsManager @Inject constructor(
     private val localStorageManager: LocalStorageManager,
 ) {
     private val logger = KtorSimpleLogger("TrendingManager")
@@ -132,7 +131,11 @@ class TrendingManager @Inject constructor(
 
     suspend fun getAllCommunityTrendData(): TrendingUpdater.AllCommunityTrendData? =
         try {
-            Json.decodeFromString<TrendingUpdater.AllCommunityTrendData>(trendingDataFile.bufferedReader().use { it.readText() }).let {
+            Json.decodeFromString<TrendingUpdater.AllCommunityTrendData>(
+                runInterruptible {
+                    trendingDataFile.bufferedReader().use { it.readText() }
+                }
+            ).let {
                 return it
             }
         } catch (e: Exception) {
@@ -162,6 +165,9 @@ class TrendingManager @Inject constructor(
             }
         }
     }
+
+    fun getCommunityStatsEntity(communityName: String, instance: String) =
+        CommunityStatsEntity.findById(dbKey(communityName, instance))
 
     @Suppress("NOTHING_TO_INLINE")
     private inline fun dbKey(communityName: String, instance: String) =

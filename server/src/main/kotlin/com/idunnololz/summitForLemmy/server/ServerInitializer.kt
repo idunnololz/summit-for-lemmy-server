@@ -3,14 +3,11 @@ package com.idunnololz.summitForLemmy.server
 import com.idunnololz.summitForLemmy.server.dataGatherer.DataGatherer
 import com.idunnololz.summitForLemmy.server.routing.ApiRoutes
 import com.idunnololz.summitForLemmy.server.taskManager.TaskManager
-import com.idunnololz.summitForLemmy.server.trending.TrendingUpdater
+import com.idunnololz.summitForLemmy.server.lemmyStats.TrendingUpdater
 import com.idunnololz.summitForLemmy.server.utils.CoroutineScopeFactory
 import io.ktor.server.application.*
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import kotlinx.serialization.encodeToString
-import kotlinx.serialization.json.Json
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -60,6 +57,7 @@ class ServerInitializer @Inject constructor(
 //            app.log.info("data: ${Json.encodeToString(d)}")
 //        }
 
+        app.log.debug("Initializing...")
         apiRoutes.initialize()
     }
 }
