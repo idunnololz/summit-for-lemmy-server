@@ -109,6 +109,7 @@ class LemmyStatsController @Inject constructor(
                             url = url,
                             desc = desc,
                             trendStats = TrendingStats(
+                                weeklyActiveUsers = communityTrendData.counts.usersActiveWeek.toDouble(),
                                 trendScore7Day = it.trendScore7Day,
                                 trendScore30Day = it.trendScore30Day,
                                 hotScore = it.hotScore,
@@ -135,9 +136,11 @@ class LemmyStatsController @Inject constructor(
 
         call.respond(
             CommunitySuggestions(
-                trendingCommunities.sortedByDescending { it.trendStats.trendScore7Day }
+                popularLast7Days = trendingCommunities.sortedByDescending { it.trendStats.weeklyActiveUsers }
                     .take(50),
-                trendingCommunities.sortedByDescending { it.trendStats.hotScore }
+                trendingLast7Days = trendingCommunities.sortedByDescending { it.trendStats.trendScore7Day }
+                    .take(50),
+                hot = trendingCommunities.sortedByDescending { it.trendStats.hotScore }
                     .take(50)
             )
         )

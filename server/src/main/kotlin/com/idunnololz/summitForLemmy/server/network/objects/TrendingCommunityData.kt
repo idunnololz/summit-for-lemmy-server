@@ -20,6 +20,7 @@ class TrendingCommunityData(
 
 @Serializable
 class TrendingStats(
+    val weeklyActiveUsers: Double,
     val trendScore7Day: Double,
     val trendScore30Day: Double,
     val hotScore: Double,

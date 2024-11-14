@@ -32,7 +32,7 @@ class TrendingUpdater @Inject constructor(
                 .mapNotNull { communityData ->
                     getTrendingData(communityData.name, communityData.baseurl)
                 }
-                .filter { it.trendScore7Day != 0.0 && it.trendScore30Day != 0.0 && it.hotScore != 0.0 }
+                .filter { it.trendScore7Day != 0.0 || it.trendScore30Day != 0.0 || it.hotScore != 0.0 || it.weeklyActiveUsers != 0.0 }
                 .sortedByDescending { it.trendScore7Day },
         )
 
@@ -61,6 +61,7 @@ class TrendingUpdater @Inject constructor(
         return CommunityTrendData(
             communityName = communityName,
             instance = instance,
+            weeklyActiveUsers = trendData.statsWithTime.lastOrNull()?.counts?.usersActiveWeek?.toDouble() ?: 0.0,
             trendScore7Day = calculateTrendLastNDays(trendData, 7),
             trendScore30Day = calculateTrendLastNDays(trendData, 30),
             hotScore = hotScore,
@@ -144,6 +145,7 @@ class TrendingUpdater @Inject constructor(
     data class CommunityTrendData(
         val communityName: String,
         val instance: String,
+        val weeklyActiveUsers: Double,
         val trendScore7Day: Double,
         val trendScore30Day: Double,
         val hotScore: Double,
