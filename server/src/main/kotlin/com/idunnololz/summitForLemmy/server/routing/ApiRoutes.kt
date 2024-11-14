@@ -37,6 +37,9 @@ class ApiRoutes @Inject constructor(
                 get("/hot-communities") {
                     lemmyStatsController.getHotCommunities(call)
                 }
+                get("/community-suggestions") {
+                    lemmyStatsController.getCommunitySuggestions(call)
+                }
                 post("/run-data-gatherer") {
                     call.respond("Ok")
 

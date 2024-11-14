@@ -1,5 +1,6 @@
 package com.idunnololz.summitForLemmy.server.lemmyStats
 
+import com.idunnololz.summitForLemmy.server.network.objects.CommunitySuggestions
 import com.idunnololz.summitForLemmy.server.network.objects.TrendingCommunityData
 import com.idunnololz.summitForLemmy.server.network.objects.TrendingStats
 import io.ktor.http.*
@@ -122,5 +123,23 @@ class LemmyStatsController @Inject constructor(
                     trendingDataCache.trendingCommunityData = it
                 }
         }
+    }
+
+    suspend fun getCommunitySuggestions(call: RoutingCall) {
+        val trendingCommunities = getTrendingCommunities()
+
+        if (trendingCommunities == null) {
+            call.respond(HttpStatusCode.NotFound, "no trend data")
+            return
+        }
+
+        call.respond(
+            CommunitySuggestions(
+                trendingCommunities.sortedByDescending { it.trendStats.trendScore7Day }
+                    .take(50),
+                trendingCommunities.sortedByDescending { it.trendStats.hotScore }
+                    .take(50)
+            )
+        )
     }
 }
