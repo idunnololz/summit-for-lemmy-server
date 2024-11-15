@@ -37,12 +37,11 @@ class TrendingUpdater @Inject constructor(
         )
 
         lemmyStatsManager.updateAllCommunityTrendData(data)
-        logger.info("Community trend data updated.")
-
-        trendingDataCache.trendingCommunityData = null
+        logger.info("Community trend data updated. Updating cache...")
 
         // force the cache to be refreshed so it will be fast for the next caller
-        lemmyStatsManager.getTrendingCommunities()
+        lemmyStatsManager.getTrendingCommunities(force = true)
+        logger.info("Community trend cache data updated. Done.")
     }
 
     suspend fun getTrendingData(communityName: String, instance: String): CommunityTrendData? {

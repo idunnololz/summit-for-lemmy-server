@@ -6,9 +6,11 @@ import com.idunnololz.summitForLemmy.server.lemmyStats.db.CommunityStatsTable
 import com.idunnololz.summitForLemmy.server.network.objects.TrendingCommunityData
 import com.idunnololz.summitForLemmy.server.network.objects.TrendingStats
 import com.idunnololz.summitForLemmy.server.utils.sha256HashAsHexString
+import com.idunnololz.summitForLemmy.server.utils.suspendTransaction
 import io.ktor.util.logging.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runInterruptible
+import kotlinx.coroutines.withContext
 import kotlinx.datetime.Clock
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
@@ -34,6 +36,8 @@ class LemmyStatsManager @Inject constructor(
 
     private val trendsDataDir = File(localStorageManager.dataDir, "trends")
     private val trendingDataFile = File(localStorageManager.dataDir, "trending_communities.json")
+
+    private val dbContext = Dispatchers.Default.limitedParallelism(1)
 
     fun updateTrendingData(trendingData: List<CommunityStats>) {
         transaction {
@@ -172,46 +176,56 @@ class LemmyStatsManager @Inject constructor(
     fun getCommunityStatsEntity(communityName: String, instance: String) =
         CommunityStatsEntity.findById(dbKey(communityName, instance))
 
-    suspend fun getTrendingCommunities(): List<TrendingCommunityData>? {
-        trendingDataCache.trendingCommunityData?.let {
-            return it
+    suspend fun getTrendingCommunities(force: Boolean = false): List<TrendingCommunityData>? {
+        if (!force) {
+            trendingDataCache.trendingCommunityData?.let {
+                return it
+            }
         }
 
         val allTrendingData = getAllCommunityTrendData() ?: return null
 
-        return transaction {
-            allTrendingData.allTrendingData
-                .mapNotNull {
-                    val communityTrendData = getCommunityStatsEntity(
-                        communityName = it.communityName,
-                        instance = it.instance
-                    ) ?: return@mapNotNull null
+        return withContext(dbContext) {
+            if (!force) {
+                trendingDataCache.trendingCommunityData?.let {
+                    return@withContext it
+                }
+            }
 
-                    with(communityTrendData) {
-                        TrendingCommunityData(
-                            baseurl = baseurl,
-                            nsfw = nsfw,
-                            isSuspicious = isSuspicious,
-                            name = name,
-                            published = published,
-                            title = title,
-                            url = url,
-                            desc = desc,
-                            trendStats = TrendingStats(
-                                weeklyActiveUsers = communityTrendData.counts.usersActiveWeek.toDouble(),
-                                trendScore7Day = it.trendScore7Day,
-                                trendScore30Day = it.trendScore30Day,
-                                hotScore = it.hotScore,
-                            ),
-                            lastUpdateTime = allTrendingData.lastUpdateTime,
-                            icon = icon,
-                            banner = banner
-                        )
+            suspendTransaction {
+                allTrendingData.allTrendingData
+                    .mapNotNull {
+                        val communityTrendData = getCommunityStatsEntity(
+                            communityName = it.communityName,
+                            instance = it.instance
+                        ) ?: return@mapNotNull null
+
+                        with(communityTrendData) {
+                            TrendingCommunityData(
+                                baseurl = baseurl,
+                                nsfw = nsfw,
+                                isSuspicious = isSuspicious,
+                                name = name,
+                                published = published,
+                                title = title,
+                                url = url,
+                                desc = desc,
+                                trendStats = TrendingStats(
+                                    weeklyActiveUsers = communityTrendData.counts.usersActiveWeek.toDouble(),
+                                    trendScore7Day = it.trendScore7Day,
+                                    trendScore30Day = it.trendScore30Day,
+                                    hotScore = it.hotScore,
+                                ),
+                                lastUpdateTime = allTrendingData.lastUpdateTime,
+                                icon = icon,
+                                banner = banner
+                            )
+                        }
                     }
-                }
-                .also {
-                    trendingDataCache.trendingCommunityData = it
-                }
+                    .also {
+                        trendingDataCache.trendingCommunityData = it
+                    }
+            }
         }
     }
 
