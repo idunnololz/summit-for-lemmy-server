@@ -56,7 +56,7 @@ class LemmyStatsController @Inject constructor(
     }
 
     suspend fun getTopTrendingCommunities(call: RoutingCall) {
-        val trendingCommunities = getTrendingCommunities()
+        val trendingCommunities = lemmyStatsManager.getTrendingCommunities()
 
         if (trendingCommunities == null) {
             call.respond(HttpStatusCode.NotFound, "no trend data")
@@ -70,7 +70,7 @@ class LemmyStatsController @Inject constructor(
     }
 
     suspend fun getHotCommunities(call: RoutingCall) {
-        val trendingCommunities = getTrendingCommunities()
+        val trendingCommunities = lemmyStatsManager.getTrendingCommunities()
 
         if (trendingCommunities == null) {
             call.respond(HttpStatusCode.NotFound, "no trend data")
@@ -83,51 +83,8 @@ class LemmyStatsController @Inject constructor(
         call.respond(data)
     }
 
-    suspend fun getTrendingCommunities(): List<TrendingCommunityData>? {
-        trendingDataCache.trendingCommunityData?.let {
-            return it
-        }
-
-        val allTrendingData = lemmyStatsManager.getAllCommunityTrendData() ?: return null
-
-        return transaction {
-            allTrendingData.allTrendingData
-                .mapNotNull {
-                    val communityTrendData = lemmyStatsManager.getCommunityStatsEntity(
-                        communityName = it.communityName,
-                        instance = it.instance
-                    ) ?: return@mapNotNull null
-
-                    with(communityTrendData) {
-                        TrendingCommunityData(
-                            baseurl = baseurl,
-                            nsfw = nsfw,
-                            isSuspicious = isSuspicious,
-                            name = name,
-                            published = published,
-                            title = title,
-                            url = url,
-                            desc = desc,
-                            trendStats = TrendingStats(
-                                weeklyActiveUsers = communityTrendData.counts.usersActiveWeek.toDouble(),
-                                trendScore7Day = it.trendScore7Day,
-                                trendScore30Day = it.trendScore30Day,
-                                hotScore = it.hotScore,
-                            ),
-                            lastUpdateTime = allTrendingData.lastUpdateTime,
-                            icon = icon,
-                            banner = banner
-                        )
-                    }
-                }
-                .also {
-                    trendingDataCache.trendingCommunityData = it
-                }
-        }
-    }
-
     suspend fun getCommunitySuggestions(call: RoutingCall) {
-        val trendingCommunities = getTrendingCommunities()
+        val trendingCommunities = lemmyStatsManager.getTrendingCommunities()
 
         if (trendingCommunities == null) {
             call.respond(HttpStatusCode.NotFound, "no trend data")
