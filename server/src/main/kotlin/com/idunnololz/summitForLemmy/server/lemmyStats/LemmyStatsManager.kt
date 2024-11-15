@@ -5,12 +5,11 @@ import com.idunnololz.summitForLemmy.server.lemmyStats.db.CommunityStatsEntity
 import com.idunnololz.summitForLemmy.server.lemmyStats.db.CommunityStatsTable
 import com.idunnololz.summitForLemmy.server.network.objects.TrendingCommunityData
 import com.idunnololz.summitForLemmy.server.network.objects.TrendingStats
+import com.idunnololz.summitForLemmy.server.utils.CoroutineScopeFactory
 import com.idunnololz.summitForLemmy.server.utils.sha256HashAsHexString
 import com.idunnololz.summitForLemmy.server.utils.suspendTransaction
 import io.ktor.util.logging.*
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.runInterruptible
-import kotlinx.coroutines.withContext
+import kotlinx.coroutines.*
 import kotlinx.datetime.Clock
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
@@ -31,13 +30,17 @@ import javax.inject.Singleton
 class LemmyStatsManager @Inject constructor(
     private val localStorageManager: LocalStorageManager,
     private val trendingDataCache: TrendingDataCache,
+    private val coroutineScopeFactory: CoroutineScopeFactory,
 ) {
     private val logger = KtorSimpleLogger("TrendingManager")
 
     private val trendsDataDir = File(localStorageManager.dataDir, "trends")
     private val trendingDataFile = File(localStorageManager.dataDir, "trending_communities.json")
 
+    private val coroutineScope = coroutineScopeFactory.create()
     private val dbContext = Dispatchers.Default.limitedParallelism(1)
+
+    private var getTrendingCommunityJob: Deferred<List<TrendingCommunityData>>? = null
 
     fun updateTrendingData(trendingData: List<CommunityStats>) {
         transaction {
@@ -185,47 +188,53 @@ class LemmyStatsManager @Inject constructor(
 
         val allTrendingData = getAllCommunityTrendData() ?: return null
 
-        return withContext(dbContext) {
-            if (!force) {
-                trendingDataCache.trendingCommunityData?.let {
-                    return@withContext it
-                }
-            }
-
-            suspendTransaction {
-                allTrendingData.allTrendingData
-                    .mapNotNull {
-                        val communityTrendData = getCommunityStatsEntity(
-                            communityName = it.communityName,
-                            instance = it.instance
-                        ) ?: return@mapNotNull null
-
-                        with(communityTrendData) {
-                            TrendingCommunityData(
-                                baseurl = baseurl,
-                                nsfw = nsfw,
-                                isSuspicious = isSuspicious,
-                                name = name,
-                                published = published,
-                                title = title,
-                                url = url,
-                                desc = desc,
-                                trendStats = TrendingStats(
-                                    weeklyActiveUsers = communityTrendData.counts.usersActiveWeek.toDouble(),
-                                    trendScore7Day = it.trendScore7Day,
-                                    trendScore30Day = it.trendScore30Day,
-                                    hotScore = it.hotScore,
-                                ),
-                                lastUpdateTime = allTrendingData.lastUpdateTime,
-                                icon = icon,
-                                banner = banner
-                            )
+        return getTrendingCommunityJob?.await() ?: run {
+            val job = coroutineScope.async {
+                withContext(dbContext) {
+                    if (!force) {
+                        trendingDataCache.trendingCommunityData?.let {
+                            return@withContext it
                         }
                     }
-                    .also {
-                        trendingDataCache.trendingCommunityData = it
+
+                    suspendTransaction {
+                        allTrendingData.allTrendingData
+                            .mapNotNull {
+                                val communityTrendData = getCommunityStatsEntity(
+                                    communityName = it.communityName,
+                                    instance = it.instance
+                                ) ?: return@mapNotNull null
+
+                                with(communityTrendData) {
+                                    TrendingCommunityData(
+                                        baseurl = baseurl,
+                                        nsfw = nsfw,
+                                        isSuspicious = isSuspicious,
+                                        name = name,
+                                        published = published,
+                                        title = title,
+                                        url = url,
+                                        desc = desc,
+                                        trendStats = TrendingStats(
+                                            weeklyActiveUsers = communityTrendData.counts.usersActiveWeek.toDouble(),
+                                            trendScore7Day = it.trendScore7Day,
+                                            trendScore30Day = it.trendScore30Day,
+                                            hotScore = it.hotScore,
+                                        ),
+                                        lastUpdateTime = allTrendingData.lastUpdateTime,
+                                        icon = icon,
+                                        banner = banner
+                                    )
+                                }
+                            }
+                            .also {
+                                trendingDataCache.trendingCommunityData = it
+                            }
                     }
+                }
             }
+            getTrendingCommunityJob = job
+            job.await()
         }
     }
 
