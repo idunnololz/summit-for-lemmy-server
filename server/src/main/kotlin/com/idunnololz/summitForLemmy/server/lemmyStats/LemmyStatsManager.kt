@@ -221,6 +221,7 @@ class LemmyStatsManager @Inject constructor(
                                             trendScore30Day = it.trendScore30Day,
                                             hotScore = it.hotScore,
                                         ),
+                                        counts = communityTrendData.counts,
                                         lastUpdateTime = allTrendingData.lastUpdateTime,
                                         icon = icon,
                                         banner = banner

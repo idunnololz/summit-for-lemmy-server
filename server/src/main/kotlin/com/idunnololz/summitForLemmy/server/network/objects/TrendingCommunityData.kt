@@ -1,5 +1,6 @@
 package com.idunnololz.summitForLemmy.server.network.objects
 
+import com.idunnololz.summitForLemmy.server.lemmyStats.CommunityCounts
 import kotlinx.serialization.Serializable
 
 @Serializable
@@ -13,6 +14,7 @@ class TrendingCommunityData(
     val url: String,
     val desc: String,
     val trendStats: TrendingStats,
+    val counts: CommunityCounts,
     val lastUpdateTime: String? = null,
     val icon: String? = null,
     val banner: String? = null,
