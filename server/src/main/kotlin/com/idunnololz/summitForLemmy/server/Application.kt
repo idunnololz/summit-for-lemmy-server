@@ -5,6 +5,9 @@ import com.idunnololz.summitForLemmy.server.plugins.configureSerialization
 import io.ktor.server.application.*
 
 fun main(args: Array<String>) {
+    println(args.joinToString())
+    Config.IS_DEBUG = args.none { it == "--release" }
+
     io.ktor.server.netty.EngineMain.main(args)
 }
 

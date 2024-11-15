@@ -2,6 +2,7 @@ package com.idunnololz.summitForLemmy.server.dataGatherer
 
 import com.idunnololz.summitForLemmy.server.lemmyStats.LemmyStatsManager
 import com.idunnololz.summitForLemmy.server.utils.retryIo
+import com.idunnololz.summitForLemmy.server.utils.toDumbLogger
 import io.ktor.client.*
 import io.ktor.client.call.*
 import io.ktor.client.request.*
@@ -15,7 +16,7 @@ class DataGatherer @Inject constructor(
     private val lemmyStatsManager: LemmyStatsManager,
 ) {
 
-    private val logger = KtorSimpleLogger("TrendingUpdater")
+    private val logger = KtorSimpleLogger("TrendingUpdater").toDumbLogger()
 
     suspend fun updateCommunitiesData() {
         logger.info("Updating trending stats...")

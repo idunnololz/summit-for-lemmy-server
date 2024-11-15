@@ -57,7 +57,10 @@ class ServerInitializer @Inject constructor(
 //            app.log.info("data: ${Json.encodeToString(d)}")
 //        }
 
-        app.log.debug("Initializing...")
+        app.developmentMode
+        if (Config.IS_DEBUG) {
+            app.log.debug("Initializing...")
+        }
         apiRoutes.initialize()
     }
 }

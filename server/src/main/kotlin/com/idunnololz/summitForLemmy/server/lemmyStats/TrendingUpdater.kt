@@ -1,5 +1,6 @@
 package com.idunnololz.summitForLemmy.server.lemmyStats
 
+import com.idunnololz.summitForLemmy.server.utils.toDumbLogger
 import javax.inject.Inject
 import io.ktor.util.logging.*
 import korlibs.time.days
@@ -17,7 +18,7 @@ class TrendingUpdater @Inject constructor(
     private val lemmyStatsManager: LemmyStatsManager,
     private val trendingDataCache: TrendingDataCache,
 ) {
-    private val logger = KtorSimpleLogger("TrendingUpdater")
+    private val logger = KtorSimpleLogger("TrendingUpdater").toDumbLogger()
 
     suspend fun updateCommunitiesTrendData() {
         logger.info("Updating community trend data...")

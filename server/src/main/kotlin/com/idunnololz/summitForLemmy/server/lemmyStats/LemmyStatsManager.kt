@@ -8,6 +8,7 @@ import com.idunnololz.summitForLemmy.server.network.objects.TrendingStats
 import com.idunnololz.summitForLemmy.server.utils.CoroutineScopeFactory
 import com.idunnololz.summitForLemmy.server.utils.sha256HashAsHexString
 import com.idunnololz.summitForLemmy.server.utils.suspendTransaction
+import com.idunnololz.summitForLemmy.server.utils.toDumbLogger
 import io.ktor.util.logging.*
 import kotlinx.coroutines.*
 import kotlinx.datetime.Clock
@@ -32,7 +33,7 @@ class LemmyStatsManager @Inject constructor(
     private val trendingDataCache: TrendingDataCache,
     private val coroutineScopeFactory: CoroutineScopeFactory,
 ) {
-    private val logger = KtorSimpleLogger("TrendingManager")
+    private val logger = KtorSimpleLogger("TrendingManager").toDumbLogger()
 
     private val trendsDataDir = File(localStorageManager.dataDir, "trends")
     private val trendingDataFile = File(localStorageManager.dataDir, "trending_communities.json")
@@ -42,15 +43,15 @@ class LemmyStatsManager @Inject constructor(
 
     private var getTrendingCommunityJob: Deferred<List<TrendingCommunityData>>? = null
 
-    fun updateTrendingData(trendingData: List<CommunityStats>) {
-        transaction {
+    suspend fun updateTrendingData(trendingData: List<CommunityStats>) {
+        suspendTransaction {
             SchemaUtils.create(CommunityStatsTable)
 
             for (community in trendingData) {
                 println(community.baseurl)
 
                 CommunityStatsTable.upsert {
-                    it[id] = EntityID<String>(dbKey(community.name, community.baseurl), CommunityStatsTable)
+                    it[id] = EntityID(dbKey(community.name, community.baseurl), CommunityStatsTable)
 
                     it[score] = community.score
                     it[baseurl] = community.baseurl
@@ -71,7 +72,7 @@ class LemmyStatsManager @Inject constructor(
 
         trendsDataDir.mkdirs()
 
-        transaction {
+        suspendTransaction {
             CommunityStatsEntity.all().forEach { communityEntity ->
                 // update the stat data...
 
