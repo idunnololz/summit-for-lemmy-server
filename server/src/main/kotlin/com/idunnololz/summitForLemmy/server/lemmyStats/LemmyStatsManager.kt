@@ -189,6 +189,10 @@ class LemmyStatsManager @Inject constructor(
 
         val allTrendingData = getAllCommunityTrendData() ?: return null
 
+        if (getTrendingCommunityJob?.isCompleted == true) {
+            getTrendingCommunityJob = null
+        }
+
         return getTrendingCommunityJob?.await() ?: run {
             val job = coroutineScope.async {
                 withContext(dbContext) {
