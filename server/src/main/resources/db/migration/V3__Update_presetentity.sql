@@ -1,0 +1,1 @@
+ALTER TABLE presetentity ADD "hasPreview" BOOLEAN NOT NULL DEFAULT(false);

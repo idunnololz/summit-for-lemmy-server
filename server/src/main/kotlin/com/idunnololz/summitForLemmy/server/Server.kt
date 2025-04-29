@@ -5,12 +5,12 @@ import dagger.Component
 import javax.inject.Singleton
 
 @Component(
-    modules = [
-        NetworkModule::class,
-        ApplicationModule::class,
-    ]
+  modules = [
+    NetworkModule::class,
+    ApplicationModule::class,
+  ],
 )
 @Singleton
 interface Server {
-    fun serverInitializer(): ServerInitializer
+  fun serverInitializer(): ServerInitializer
 }

@@ -5,6 +5,8 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
-class TrendingDataCache @Inject constructor() {
-    var trendingCommunityData: List<TrendingCommunityData>? = null
+class TrendingDataCache
+@Inject
+constructor() {
+  var trendingCommunityData: List<TrendingCommunityData>? = null
 }

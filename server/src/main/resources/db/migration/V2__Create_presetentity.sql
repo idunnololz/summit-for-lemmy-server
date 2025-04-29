@@ -1,0 +1,1 @@
+CREATE TABLE IF NOT EXISTS presetentity (id VARCHAR(512) PRIMARY KEY, "presetName" VARCHAR(255) NOT NULL, "presetDescription" TEXT NOT NULL, "presetData" bytea NOT NULL, "createTs" BIGINT NOT NULL, "updateTs" BIGINT NOT NULL, "isApproved" BOOLEAN NOT NULL);

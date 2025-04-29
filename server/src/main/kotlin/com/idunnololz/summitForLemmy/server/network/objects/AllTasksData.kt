@@ -6,6 +6,6 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 class AllTasksData(
-    val taskInfo: List<TaskInfo>,
-    val currentTime: Instant,
+  val taskInfo: List<TaskInfo>,
+  val currentTime: Instant,
 )
