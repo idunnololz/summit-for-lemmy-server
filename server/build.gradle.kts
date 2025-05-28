@@ -6,7 +6,7 @@ plugins {
 }
 
 group = "com.idunnololz.summitForLemmy.server"
-version = "0.0.1"
+version = "0.2.2"
 
 application {
   mainClass.set("com.idunnololz.summitForLemmy.server.ApplicationKt")
