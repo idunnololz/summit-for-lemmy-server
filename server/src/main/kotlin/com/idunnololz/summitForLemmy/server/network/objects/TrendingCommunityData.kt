@@ -20,6 +20,9 @@ class TrendingCommunityData(
   val banner: String? = null,
 )
 
+val TrendingCommunityData.fullName
+  get() = "$name@$baseurl"
+
 @Serializable
 class TrendingStats(
   val weeklyActiveUsers: Double,

@@ -79,6 +79,7 @@ constructor(
 
     app.routing {
       staticFiles("/public", localStorageManager.publicDir)
+      staticFiles("/public", localStorageManager.publicDir)
       get("/") {
         call.respondRedirect("https://summit.idunnololz.com/")
       }

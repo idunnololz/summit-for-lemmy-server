@@ -1,11 +1,14 @@
 package com.idunnololz.summitForLemmy.server.lemmyStats
 
 import com.idunnololz.summitForLemmy.server.network.objects.CommunitySuggestions
+import com.idunnololz.summitForLemmy.server.network.objects.TrendingCommunityData
+import com.idunnololz.summitForLemmy.server.network.objects.fullName
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.response.respond
 import io.ktor.server.routing.RoutingCall
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlin.random.Random
 
 @Singleton
 class LemmyStatsController
@@ -88,11 +91,30 @@ constructor(
   }
 
   suspend fun getCommunitySuggestions(call: RoutingCall) {
+    val seed = call.queryParameters["seed"]?.toLongOrNull()
     val trendingCommunities = lemmyStatsManager.getTrendingCommunities()
 
     if (trendingCommunities == null) {
       call.respond(HttpStatusCode.NotFound, "no trend data")
       return
+    }
+
+    val randomCommunities = mutableListOf<TrendingCommunityData>()
+    if (seed != null) {
+      val rand = Random(seed)
+      val seen = mutableSetOf<String>()
+
+      for (i in 0 until 100) {
+        val index = rand.nextInt() % trendingCommunities.size
+        val c = trendingCommunities[index]
+        if (seen.add(c.fullName)) {
+          randomCommunities.add(c)
+        }
+
+        if (randomCommunities.size > 10) {
+          break
+        }
+      }
     }
 
     call.respond(
@@ -106,6 +128,7 @@ constructor(
         hot =
         trendingCommunities.sortedByDescending { it.trendStats.hotScore }
           .take(50),
+        randomCommunities = randomCommunities,
       ),
     )
   }
