@@ -8,6 +8,7 @@ import io.ktor.server.response.respond
 import io.ktor.server.routing.RoutingCall
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlin.math.abs
 import kotlin.random.Random
 
 @Singleton
@@ -105,7 +106,7 @@ constructor(
       val seen = mutableSetOf<String>()
 
       for (i in 0 until 100) {
-        val index = rand.nextInt() % trendingCommunities.size
+        val index = abs(rand.nextInt() % trendingCommunities.size)
         val c = trendingCommunities[index]
 
         if (c.counts.posts == 0) {
