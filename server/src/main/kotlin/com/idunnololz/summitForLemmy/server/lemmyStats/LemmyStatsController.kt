@@ -107,11 +107,16 @@ constructor(
       for (i in 0 until 100) {
         val index = rand.nextInt() % trendingCommunities.size
         val c = trendingCommunities[index]
+
+        if (c.counts.posts == 0) {
+          continue
+        }
+
         if (seen.add(c.fullName)) {
           randomCommunities.add(c)
         }
 
-        if (randomCommunities.size > 10) {
+        if (randomCommunities.size >= 10) {
           break
         }
       }
